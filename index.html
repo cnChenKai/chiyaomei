@@ -5,15 +5,112 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>每日服药提醒</title>
   <style>
-    /* 原有完整CSS样式 */
+    body {
+      font-family: 'Segoe UI', system-ui;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    .container {
+      text-align: center;
+      background: #f8f9fa;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+    .history {
+      margin-top: 2rem;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- 完整DOM结构 -->
+    <h1>今日服药了吗？💊</h1>
+    <button id="statusBtn">点击标记已服药</button>
+    <div class="history">
+      <h3>服药记录</h3>
+      <ul id="historyList"></ul>
+    </div>
   </div>
+
   <script>
-    // 完整JavaScript代码
+    // 初始化本地存储
+    let medHistory = JSON.parse(localStorage.getItem('medHistory') || '[]');
+    
+    // 获取DOM元素
+    const statusBtn = document.getElementById('statusBtn');
+    const historyList = document.getElementById('historyList');
+
+    // 更新按钮状态
+    function updateStatus() {
+      const today = new Date().toLocaleDateString();
+      const takenToday = medHistory.includes(today);
+      
+      statusBtn.textContent = takenToday ? '✅ 今日已服药' : '点击标记已服药';
+      statusBtn.style.background = takenToday ? '#2196F3' : '#4CAF50';
+    }
+
+    // 更新历史记录
+    function updateHistory() {
+      historyList.innerHTML = medHistory
+        .reverse()
+        .map(date => `<li>${date} ✔️</li>`)
+        .join('');
+    }
+
+    // 点击事件处理
+    statusBtn.addEventListener('click', () => {
+      const today = new Date().toLocaleDateString();
+      
+      if (!medHistory.includes(today)) {
+        medHistory.push(today);
+        localStorage.setItem('medHistory', JSON.stringify(medHistory));
+      }
+      
+      updateStatus();
+      updateHistory();
+    });
+
+    // 每日提醒
+    function checkReminder() {
+      const now = new Date();
+      const remindTime = new Date();
+      remindTime.setHours(9, 0, 0, 0); // 设置每日提醒时间9:00
+      
+      if (now > remindTime && !medHistory.includes(now.toLocaleDateString())) {
+        // 显示浏览器通知（需要用户授权）
+        if (Notification.permission === 'granted') {
+          new Notification('服药提醒', {
+            body: '记得按时服药哦！💊',
+            icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTggOCAxOCA2IDE2IDYgMTYgOCAxNCA4IDE0IDEwIDE2IDEwIDE2IDEyIDE4IDEyIDE4IDEwIDIwIDEwIDIwIDh6TTE5IDNMMTggM0E0IDQgMCAwIDAgMTQgMy4yIDQgNCAwIDAgMCAxMCAzSDZjLTEuMSAwLTIgLjktMiAydjE0YzAgMS4xLjkgMiAyIDJoMTJjMS4xIDAgMi0uOSAyLTJWM2gxYy41IDAgMSAuNSAxIDF2MTZjMCAuNS0uNSAxLTEgMUg1Yy0uNSAwLTEtLjUtMS0xVjRjMC0uNS41LTEgMS0xaDF2MWgxMlYzem0tMyAxMkg4di0yaDh2MnoiLz48L3N2Zz4='
+          });
+        }
+      }
+    }
+
+    // 初始化
+    updateStatus();
+    updateHistory();
+    setInterval(checkReminder, 60000); // 每分钟检查一次
+
+    // 请求通知权限
+    if (Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
   </script>
 </body>
 </html>
